@@ -69,6 +69,13 @@ EVENTS = {
         "extras": {"Men": ["backpack"], "Women": ["backpack"]},
         "tip": "Comfort first: breathable fabrics and shoes you can walk in all day.",
     },
+    "Graduation / Convocation": {
+        "level": "smart",
+        "colours": ["navy", "white", "pastel blue", "beige", "maroon"],
+        "styles": ["Formal", "Ethnic", "Fusion"],
+        "extras": {"Men": ["polished belt"], "Women": ["pearl studs"]},
+        "tip": "You'll wear a gown on top, so choose light fabrics and a neat collar or neckline.",
+    },
     "Date": {
         "level": "smart",
         "colours": ["red", "black", "pastel pink", "navy", "white"],
