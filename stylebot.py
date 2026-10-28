@@ -251,8 +251,11 @@ def build_look(event, style, gender, colour, budget):
 
     items = []
     for group, names in (("clothing", clothing), ("footwear", [footwear]), ("accessories", accessories)):
-        share = budget * BUDGET_SPLIT[group] / len(names)
-        for name in names:
+        # The main garment (first clothing item) gets double weight, so a
+        # lehenga is budgeted more than its dupatta.
+        weights = [2 if group == "clothing" and i == 0 else 1 for i in range(len(names))]
+        for name, weight in zip(names, weights):
+            share = budget * BUDGET_SPLIT[group] * weight / sum(weights)
             items.append({
                 "name": name,
                 "group": group,
