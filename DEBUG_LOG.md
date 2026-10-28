@@ -75,7 +75,43 @@ UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f457' in posit
 
 ---
 
+## Round 4: Bugs caught by unit tests
+
+Manual testing only finds what you think of trying, so the AI was asked to write **unit tests** (`tests/test_stylebot.py`). Each test file was committed *before* the fix, so the history shows the test failing first and passing after.
+
+### Bug 9: `Rs. 3000` rejected as an invalid budget
+**Failing test:**
+```
+FAIL: test_rs_with_dot
+    self.assertEqual(stylebot.parse_budget("Rs. 3000"), 3000)
+AssertionError: None != 3000
+```
+**Cause:** the fix for Bug 6 cut the text at the **first** `.` to drop paise, but in `Rs. 3000` the first dot belongs to "Rs.", so only `Rs` was left. *A fix for one bug created a new one.*
+**Fix:** find the number itself with a regular expression (`\d[\d,]*`) instead of splitting at dots.
+*Commits: "Add unit tests for rupee formatting and budget parsing" → "Fix 'Rs. 3000' being rejected as an invalid budget"*
+
+### Bug 10: Item prices added up to more than the budget
+**Failing test:**
+```
+FAIL: test_total_never_exceeds_budget
+AssertionError: 650 not less than or equal to 500 : Ethnic/Men at 500
+```
+**Cause:** each item was rounded to the *nearest* ₹50 with a minimum of ₹50, so rounding up on several items pushed ₹5,000 to ₹5,050, and small budgets went far over.
+**Fix:** a new `split_budget()` rounds every share **down**, then gives the leftover to the items that lost the most in rounding (the "largest remainder" method). Totals now match the budget exactly. The minimum budget was raised to ₹500.
+*Commits: "Add unit tests for outfit building and shopping links" → "Fix item prices adding up to more than the budget"*
+
+### Bug 11: Wrong saved look could be chosen
+**Found while adding the delete feature (code review with AI):** saved looks were picked with `titles.index(choice)`. Two looks saved in the same minute have identical titles, and `index()` always returns the *first*, so deleting the second look would have deleted the first one.
+**Fix:** `choose()` can now return the position (`return_index=True`).
+
+### Bug 12: `/` in a file name
+**Found while adding export:** naming the file after "Graduation / Convocation" would treat the `/` as a folder and fail. `safe_filename()` turns it into `graduation-convocation`, and a unit test covers it.
+
+---
+
 ## Final checks
-- All **140** combinations (7 events × 5 styles × 2 genders × with/without colour) build a look without errors
+- **19 unit tests pass**, and GitHub Actions runs them on macOS, Windows and Linux (Python 3.10 and 3.13)
+- Every combination of 9 occasions × 5 styles × 2 genders builds a look, and totals equal the budget exactly
 - Rupee formatting: `₹999`, `₹1,000`, `₹1,25,000`, `₹1,00,00,000`
 - Zara and H&M are correctly skipped for ethnic clothing items
+- Searches include the gender ("women block heels")
