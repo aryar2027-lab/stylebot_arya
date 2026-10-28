@@ -207,8 +207,8 @@ BUDGET_SPLIT = {"clothing": 0.60, "footwear": 0.25, "accessories": 0.15}
 # ---------------------------------------------------------------------------
 
 
-def choose(prompt, options):
-    """Show a numbered menu and return the chosen option."""
+def choose(prompt, options, return_index=False):
+    """Show a numbered menu and return the chosen option (or its position)."""
     print(f"\n{prompt}")
     for i, option in enumerate(options, 1):
         print(f"  {i}. {option}")
@@ -217,7 +217,8 @@ def choose(prompt, options):
     while True:
         choice = input("> ").strip()
         if choice.isdigit() and 1 <= int(choice) <= len(options):
-            return options[int(choice) - 1]
+            index = int(choice) - 1
+            return index if return_index else options[index]
         print(f"Please enter a number from 1 to {len(options)}.")
 
 
@@ -396,9 +397,13 @@ def load_saved():
 def save_look(look):
     looks = load_saved()
     looks.append({**look, "saved_on": datetime.now().strftime("%d %b %Y, %I:%M %p")})
+    write_saved(looks)
+    print(f"Saved! You now have {len(looks)} saved look(s).")
+
+
+def write_saved(looks):
     with open(SAVE_FILE, "w", encoding="utf-8") as f:
         json.dump(looks, f, indent=2, ensure_ascii=False)
-    print(f"Saved! You now have {len(looks)} saved look(s).")
 
 
 def view_saved():
@@ -407,8 +412,17 @@ def view_saved():
         print("\nNo saved looks yet. Create one and press 's' to save it.")
         return
     titles = [f"{l['event']} - {l['style']}, {l['colour']} ({l['saved_on']})" for l in looks]
-    look = looks[titles.index(choose("Your saved looks:", titles))]
-    look_menu(look, already_saved=True)
+    # Use the position, not titles.index(): two looks saved in the same
+    # minute can have identical titles, and index() would pick the first one.
+    position = choose("Your saved looks:", titles, return_index=True)
+    action = choose("What would you like to do?", ["Open it", "Delete it", "Back"])
+    if action == "Open it":
+        look_menu(looks[position], already_saved=True)
+    elif action == "Delete it":
+        if input(f"Delete '{titles[position]}'? (y/n): ").strip().lower() == "y":
+            looks.pop(position)
+            write_saved(looks)
+            print(f"Deleted. {len(looks)} saved look(s) left.")
 
 
 # ---------------------------------------------------------------------------
