@@ -47,5 +47,62 @@ class TestParseBudget(unittest.TestCase):
         self.assertIsNone(stylebot.parse_budget("50"))  # below minimum
 
 
+class TestBuildLook(unittest.TestCase):
+    def test_every_combination_builds(self):
+        for event in stylebot.EVENTS:
+            for style in stylebot.STYLES:
+                for gender in stylebot.GENDERS:
+                    look = stylebot.build_look(event, style, gender, "red", 3000)
+                    self.assertTrue(look["items"], f"empty look: {event}/{style}/{gender}")
+
+    def test_event_changes_outfit(self):
+        wedding = stylebot.build_look("Wedding", "Ethnic", "Men", "red", 3000)
+        beach = stylebot.build_look("Beach / Vacation", "Ethnic", "Men", "red", 3000)
+        self.assertNotEqual(
+            [i["name"] for i in wedding["items"]], [i["name"] for i in beach["items"]]
+        )
+
+    def test_blank_colour_has_no_extra_spaces(self):
+        look = stylebot.build_look("Wedding", "Ethnic", "Men", "", 3000)
+        for item in look["items"]:
+            self.assertEqual(item["name"], item["name"].strip())
+            self.assertNotIn("  ", item["name"])
+
+    def test_total_never_exceeds_budget(self):
+        for budget in (500, 999, 2500, 3000, 5000, 12345, 125000):
+            for style in stylebot.STYLES:
+                for gender in stylebot.GENDERS:
+                    look = stylebot.build_look("Wedding", style, gender, "red", budget)
+                    total = sum(i["price"] for i in look["items"])
+                    self.assertLessEqual(total, budget, f"{style}/{gender} at {budget}")
+
+    def test_style_warning(self):
+        look = stylebot.build_look("Interview / Office", "Casual", "Women", "navy", 3000)
+        self.assertIsNotNone(look["warning"])
+        look = stylebot.build_look("Interview / Office", "Formal", "Women", "navy", 3000)
+        self.assertIsNone(look["warning"])
+
+
+class TestLinks(unittest.TestCase):
+    def test_links_are_url_encoded(self):
+        url = stylebot.make_link("Ajio", "maroon silk kurta")
+        self.assertNotIn(" ", url)
+        self.assertIn("maroon%20silk%20kurta", url)
+
+    def test_myntra_uses_dashes(self):
+        self.assertIn("myntra.com/maroon-silk-kurta", stylebot.make_link("Myntra", "maroon silk kurta"))
+
+    def test_ethnic_clothing_skips_zara_and_hm(self):
+        item = {"name": "red lehenga choli", "ethnic": True}
+        sites = [site for site, _ in stylebot.links_for(item)]
+        self.assertNotIn("Zara", sites)
+        self.assertNotIn("H&M", sites)
+        self.assertIn("Myntra", sites)
+
+    def test_western_items_use_all_sites(self):
+        item = {"name": "black blazer", "ethnic": False}
+        self.assertEqual(len(stylebot.links_for(item)), len(stylebot.SITES))
+
+
 if __name__ == "__main__":
     unittest.main()
