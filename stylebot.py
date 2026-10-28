@@ -18,7 +18,9 @@ import webbrowser
 from datetime import datetime
 from urllib.parse import quote, quote_plus
 
-SAVE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "saved_looks.json")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+SAVE_FILE = os.path.join(APP_DIR, "saved_looks.json")
+EXPORT_DIR = os.path.join(APP_DIR, "shopping_lists")
 
 # ---------------------------------------------------------------------------
 # Data
@@ -401,6 +403,36 @@ def save_look(look):
     print(f"Saved! You now have {len(looks)} saved look(s).")
 
 
+def safe_filename(text):
+    """'Graduation / Convocation' -> 'graduation-convocation'.
+    A '/' in a file name would be treated as a folder and crash the export."""
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+
+
+def export_look(look):
+    """Write the look as a Markdown shopping list with clickable links."""
+    os.makedirs(EXPORT_DIR, exist_ok=True)
+    name = safe_filename(f"{look['event']} {look['style']} {look['colour']}") or "look"
+    path = os.path.join(EXPORT_DIR, f"{name}.md")
+    lines = [
+        f"# {look['event']}: {look['style']} look ({look['gender']})",
+        "",
+        f"**Colour:** {look['colour'].title()} · **Budget:** {rupees(look['budget'])}",
+        "",
+        f"> 💡 {look['tip']}",
+        "",
+    ]
+    for group in BUDGET_SPLIT:
+        lines += [f"## {ICONS[group]} {group.title()}", ""]
+        for item in (i for i in look["items"] if i["group"] == group):
+            links = " · ".join(f"[{site}]({url})" for site, url in links_for(item))
+            lines.append(f"- [ ] **{item['name']}** (~{rupees(item['price'])}): {links}")
+        lines.append("")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    print(f"Shopping list saved to: {path}")
+
+
 def write_saved(looks):
     with open(SAVE_FILE, "w", encoding="utf-8") as f:
         json.dump(looks, f, indent=2, ensure_ascii=False)
@@ -437,6 +469,7 @@ def look_menu(look, already_saved=False):
         print("\nWhat next?")
         print(f"  1-{len(look['items'])} = shopping links for that item")
         print("  a = links for every item")
+        print("  e = export as a shopping list (Markdown file)")
         if not already_saved:
             print("  n = show another colour   s = save this look")
         print("  b = back to main menu")
@@ -449,6 +482,8 @@ def look_menu(look, already_saved=False):
                 print(f"\n {item['name']}")
                 for site, url in links_for(item):
                     print(f"   {site:<14} {url}")
+        elif choice == "e":
+            export_look(look)
         elif choice == "n" and not already_saved:
             return "another"
         elif choice == "s" and not already_saved:

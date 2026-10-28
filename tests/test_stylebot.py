@@ -113,5 +113,11 @@ class TestLinks(unittest.TestCase):
         self.assertEqual(len(stylebot.links_for(item)), len(stylebot.SITES))
 
 
+class TestExport(unittest.TestCase):
+    def test_safe_filename_removes_slashes(self):
+        self.assertEqual(stylebot.safe_filename("Graduation / Convocation"), "graduation-convocation")
+        self.assertNotIn("/", stylebot.safe_filename("Party / Night out red"))
+
+
 if __name__ == "__main__":
     unittest.main()
