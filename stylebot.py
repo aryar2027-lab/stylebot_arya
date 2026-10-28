@@ -34,6 +34,13 @@ EVENTS = {
         "extras": {"Men": ["silk pocket square"], "Women": ["maang tikka"]},
         "tip": "Avoid wearing white or all-black to Indian weddings; rich jewel tones photograph best.",
     },
+    "Haldi / Mehendi": {
+        "level": "smart",
+        "colours": ["yellow", "lime green", "orange", "pastel pink", "mint green"],
+        "styles": ["Ethnic", "Fusion"],
+        "extras": {"Men": ["printed dupatta stole"], "Women": ["floral jewellery set"]},
+        "tip": "Haldi gets messy: wear yellow you don't mind staining, and skip suede shoes.",
+    },
     "Festival (Diwali, Eid, Navratri...)": {
         "level": "smart",
         "colours": ["yellow", "orange", "pink", "green", "red"],
