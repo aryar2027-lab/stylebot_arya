@@ -207,16 +207,29 @@ def choose(prompt, options):
         print(f"Please enter a number from 1 to {len(options)}.")
 
 
+MIN_BUDGET = 100
+
+
+def parse_budget(text):
+    """Turn user text like '₹3,000' into an int, or return None if invalid.
+
+    Kept separate from input() so it can be unit-tested.
+    """
+    # Bug fix: int("₹3,000") raised ValueError. Keep only the digits.
+    # Bug fix 2: "3000.50" became 300050 - drop the paise part first.
+    digits = re.sub(r"[^0-9]", "", text.split(".")[0])
+    if digits and int(digits) >= MIN_BUDGET:
+        return int(digits)
+    return None
+
+
 def ask_budget():
     """Ask for a budget in rupees; accepts '3000', '₹3,000', 'Rs 3000'."""
     while True:
-        text = input("\nTotal budget in ₹ (e.g. 3000): ")
-        # Bug fix: int("₹3,000") raised ValueError. Keep only the digits.
-        # Bug fix 2: "3000.50" became 300050 - drop the paise part first.
-        digits = re.sub(r"[^0-9]", "", text.split(".")[0])
-        if digits and int(digits) >= 100:
-            return int(digits)
-        print("Please enter an amount of at least ₹100.")
+        budget = parse_budget(input("\nTotal budget in ₹ (e.g. 3000): "))
+        if budget is not None:
+            return budget
+        print(f"Please enter an amount of at least ₹{MIN_BUDGET}.")
 
 
 def rupees(amount):
