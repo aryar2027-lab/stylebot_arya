@@ -215,12 +215,15 @@ def parse_budget(text):
 
     Kept separate from input() so it can be unit-tested.
     """
-    # Bug fix: int("₹3,000") raised ValueError. Keep only the digits.
-    # Bug fix 2: "3000.50" became 300050 - drop the paise part first.
-    digits = re.sub(r"[^0-9]", "", text.split(".")[0])
-    if digits and int(digits) >= MIN_BUDGET:
-        return int(digits)
-    return None
+    # Bug fix: int("₹3,000") raised ValueError, so we pull the number out.
+    # Bug fix 2: "3000.50" became 300050 - ignore the paise part.
+    # Bug fix 3: "Rs. 3000" was rejected because we cut at the FIRST "."
+    # (the one in "Rs."). Now we look for the number itself instead.
+    match = re.search(r"\d[\d,]*", text)
+    if not match:
+        return None
+    amount = int(match.group().replace(",", ""))
+    return amount if amount >= MIN_BUDGET else None
 
 
 def ask_budget():
