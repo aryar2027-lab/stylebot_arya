@@ -207,7 +207,7 @@ def choose(prompt, options):
         print(f"Please enter a number from 1 to {len(options)}.")
 
 
-MIN_BUDGET = 100
+MIN_BUDGET = 500  # below this a full outfit + accessories isn't realistic
 
 
 def parse_budget(text):
@@ -250,6 +250,26 @@ def rupees(amount):
 # ---------------------------------------------------------------------------
 
 
+def split_budget(budget, shares):
+    """Round each share to a neat amount without going over the budget.
+
+    Bug fix: rounding every item to the nearest ₹50 (with a ₹50 minimum)
+    made a ₹5,000 look total ₹5,050, and a small budget total far more.
+    Now we round DOWN, then hand the leftover to the items that lost the
+    most in rounding (the "largest remainder" method).
+    """
+    step = 50 if budget >= 2000 else 10
+    prices = [int(share // step) * step for share in shares]
+    leftover = budget - sum(prices)
+    by_remainder = sorted(range(len(shares)), key=lambda i: shares[i] - prices[i], reverse=True)
+    for i in by_remainder:
+        if leftover < step:
+            break
+        prices[i] += step
+        leftover -= step
+    return prices
+
+
 def build_look(event, style, gender, colour, budget):
     """Return a dict describing the outfit, with a price guide per item."""
     info = EVENTS[event]
@@ -266,18 +286,21 @@ def build_look(event, style, gender, colour, budget):
     accessories = list(dict.fromkeys(accessories))  # remove duplicates, keep order
 
     items = []
+    shares = []
     for group, names in (("clothing", clothing), ("footwear", [footwear]), ("accessories", accessories)):
         # The main garment (first clothing item) gets double weight, so a
         # lehenga is budgeted more than its dupatta.
         weights = [2 if group == "clothing" and i == 0 else 1 for i in range(len(names))]
         for name, weight in zip(names, weights):
-            share = budget * BUDGET_SPLIT[group] * weight / sum(weights)
+            shares.append(budget * BUDGET_SPLIT[group] * weight / sum(weights))
             items.append({
                 "name": name,
                 "group": group,
-                "price": int(round(share / 50) * 50) or 50,  # round to nearest ₹50
                 "ethnic": family == "ethnic" and group != "accessories",
             })
+
+    for item, price in zip(items, split_budget(budget, shares)):
+        item["price"] = price
 
     return {
         "event": event, "style": style, "gender": gender,
