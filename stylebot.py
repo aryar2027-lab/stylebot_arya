@@ -426,7 +426,20 @@ def main():
             break
 
 
+def fix_console_encoding():
+    """Bug fix: on Windows consoles using an old code page (e.g. cp1252),
+    printing emoji or '₹' crashed with UnicodeEncodeError. Switch output to
+    UTF-8, and if the console still can't show a character, print '?' instead
+    of crashing."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass  # very old Python or an unusual stream: leave it as is
+
+
 if __name__ == "__main__":
+    fix_console_encoding()
     try:
         main()
     except (KeyboardInterrupt, EOFError):
