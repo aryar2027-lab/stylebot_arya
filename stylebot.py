@@ -548,7 +548,17 @@ def fix_console_encoding():
             pass  # very old Python or an unusual stream: leave it as is
 
 
+def check_python_version():
+    """Stop with a clear message on Python older than 3.8, instead of a
+    confusing error later (e.g. stream.reconfigure needs 3.7+)."""
+    if sys.version_info < (3, 8):
+        print(f"StyleBot needs Python 3.8 or newer; you have {sys.version.split()[0]}.")
+        print("Download the latest version from https://www.python.org/downloads/")
+        sys.exit(1)
+
+
 if __name__ == "__main__":
+    check_python_version()
     fix_console_encoding()
     try:
         main()
