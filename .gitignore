@@ -1,0 +1,14 @@
+# Personal data created when you save looks
+saved_looks.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
