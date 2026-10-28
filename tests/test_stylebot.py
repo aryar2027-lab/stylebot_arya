@@ -99,6 +99,15 @@ class TestLinks(unittest.TestCase):
         self.assertNotIn("H&M", sites)
         self.assertIn("Myntra", sites)
 
+    def test_search_includes_gender(self):
+        look = stylebot.build_look("Date", "Western", "Women", "red", 3000)
+        for _, url in stylebot.links_for(look["items"][0]):
+            self.assertIn("women", url)
+
+    def test_old_saved_looks_without_search_field_still_work(self):
+        links = stylebot.links_for({"name": "black blazer", "ethnic": False})
+        self.assertIn("black", links[0][1])
+
     def test_western_items_use_all_sites(self):
         item = {"name": "black blazer", "ethnic": False}
         self.assertEqual(len(stylebot.links_for(item)), len(stylebot.SITES))

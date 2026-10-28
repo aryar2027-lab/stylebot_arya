@@ -295,6 +295,9 @@ def build_look(event, style, gender, colour, budget):
             shares.append(budget * BUDGET_SPLIT[group] * weight / sum(weights))
             items.append({
                 "name": name,
+                # Searching "loafers" shows men's AND women's shoes, so add the
+                # gender to the search text: "women loafers".
+                "search": f"{gender.lower()} {name}",
                 "group": group,
                 "ethnic": family == "ethnic" and group != "accessories",
             })
@@ -320,7 +323,9 @@ def make_link(site, item_name):
 
 def links_for(item):
     """Return (site, url) pairs; skip Zara/H&M for ethnic clothing they don't sell."""
-    return [(site, make_link(site, item["name"]))
+    # Looks saved by older versions have no "search" field, so fall back to the name
+    query = item.get("search", item["name"])
+    return [(site, make_link(site, query))
             for site, data in SITES.items() if data["ethnic"] or not item["ethnic"]]
 
 
